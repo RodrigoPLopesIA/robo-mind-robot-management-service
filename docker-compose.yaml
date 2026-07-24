@@ -1,0 +1,12 @@
+services:
+  robot-management-service-database:
+    image: mongo
+    container_name: robot-management-service-database
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+        - robot-management-service-database-data:/data/db
+
+volumes:
+  robot-management-service-database-data:
