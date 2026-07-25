@@ -37,3 +37,4 @@ out/
 .vscode/
 *Zone.Identifier
 /**/*Zone.Identifier
+/src/main/resources/application-local.yaml
