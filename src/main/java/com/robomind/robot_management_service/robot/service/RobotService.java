@@ -7,6 +7,7 @@ import com.robomind.robot_management_service.exceptions.errors.RobotConflictExce
 import com.robomind.robot_management_service.exceptions.errors.RobotNotFoundException;
 import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
 import com.robomind.robot_management_service.robot.enums.RobotStatus;
+import com.robomind.robot_management_service.robot.producer.RobotProducer;
 import jakarta.validation.Valid;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
@@ -27,15 +28,19 @@ import com.robomind.robot_management_service.robot.repository.RobotRepository;
 public class RobotService {
 
 	private final RobotRepository robotRepository;
-
-	public RobotService(RobotRepository robotRepository) {
+    private final RobotProducer robotProducer;
+	public RobotService(RobotRepository robotRepository, RobotProducer robotProducer) {
 		this.robotRepository = robotRepository;
+        this.robotProducer = robotProducer;
 	}
 
 	public RobotResponse create(CreateRobotRequest request) {
         verifyIfRobotExistsBySerialNumber(request.serialNumber());
 		Robot robot = buildRobot(request);
-		return toResponse(robotRepository.save(robot));
+		Robot savedRobot = robotRepository.save(robot);
+        var response = toResponse(savedRobot);
+        robotProducer.publishRobotCreated(response);
+		return response;
 	}
 
 
@@ -77,7 +82,10 @@ public class RobotService {
         }
 
         buildUpdateRobot(request, robot);
-        return toResponse(robotRepository.save(robot));
+        Robot updatedRobot = robotRepository.save(robot);
+        var response = toResponse(updatedRobot);
+        robotProducer.publishRobotUpdated(response);
+        return response;
     }
 
     private void buildUpdateRobot(UpdateRobotRequest request, Robot robot){
@@ -106,6 +114,9 @@ public class RobotService {
         Robot robot = robotRepository.findByRobotId(id)
                 .orElseThrow(() -> new RobotNotFoundException("Robot not found with id: " + id));
         robot.setStatus(RobotStatus.INACTIVE.toString());
-        return toResponse(robotRepository.save(robot));
+        Robot inactivatedRobot = robotRepository.save(robot);
+        var response = toResponse(inactivatedRobot);
+        robotProducer.publishRobotInactivated(response);
+        return response;
     }
 }
