@@ -1,5 +1,7 @@
 package com.robomind.robot_management_service.robot.service;
 
+import com.robomind.robot_management_service.exceptions.errors.RobotConflictException;
+import com.robomind.robot_management_service.exceptions.errors.RobotNotFoundException;
 import com.robomind.robot_management_service.robot.dto.CreateRobotRequest;
 import com.robomind.robot_management_service.robot.dto.RobotResponse;
 import com.robomind.robot_management_service.robot.model.Robot;
@@ -94,11 +96,11 @@ class RobotServiceTest {
 
         Mockito.when(robotRepository.existsBySerialNumber(createRobotRequest.serialNumber())).thenReturn(true);
 
-        var result = Assertions.assertThrows(ResponseStatusException.class, () -> robotService.create(createRobotRequest));
+        var result = Assertions.assertThrows(RobotConflictException.class, () -> robotService.create(createRobotRequest));
 
         Assertions.assertNotNull(result);
         Assertions.assertNotNull(result.getMessage());
-        Assertions.assertEquals("409 CONFLICT \"Serial number already registered\"", result.getMessage());
+        Assertions.assertEquals("Serial number already registered", result.getMessage());
 
         Mockito.verify(robotRepository, Mockito.times(1)).existsBySerialNumber(createRobotRequest.serialNumber());
         Mockito.verify(robotRepository, Mockito.times(0)).save(Mockito.any());
@@ -145,11 +147,11 @@ class RobotServiceTest {
     void shouldReturnNotFoundIfRobotDoesNotExist() {
         Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.empty());
 
-        var result = Assertions.assertThrows(ResponseStatusException.class, () -> robotService.findByRobotId("some-id"));
+        var result = Assertions.assertThrows(RobotNotFoundException.class, () -> robotService.findByRobotId("some-id"));
 
         Assertions.assertNotNull(result);
         Assertions.assertNotNull(result.getMessage());
-        Assertions.assertEquals("404 NOT_FOUND \"Robot not found\"", result.getMessage());
+        Assertions.assertEquals("Robot not found with id: some-id", result.getMessage());
 
         Mockito.verify(robotRepository, Mockito.times(1)).findByRobotId(Mockito.anyString());
     }
