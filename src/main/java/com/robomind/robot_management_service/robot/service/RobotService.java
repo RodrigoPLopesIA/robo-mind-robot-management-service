@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.robomind.robot_management_service.exceptions.errors.RobotConflictException;
 import com.robomind.robot_management_service.exceptions.errors.RobotNotFoundException;
+import com.robomind.robot_management_service.robot.dto.ChangeStatusDTO;
 import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
 import com.robomind.robot_management_service.robot.enums.RobotStatus;
 import com.robomind.robot_management_service.robot.producer.RobotProducer;
@@ -110,13 +111,20 @@ public class RobotService {
         }
     }
 
-    public RobotResponse inactivateByRobotId(String id) {
+    public RobotResponse changeStatus(String id, ChangeStatusDTO data) {
         Robot robot = robotRepository.findByRobotId(id)
                 .orElseThrow(() -> new RobotNotFoundException("Robot not found with id: " + id));
-        robot.setStatus(RobotStatus.INACTIVE.toString());
-        Robot inactivatedRobot = robotRepository.save(robot);
-        var response = toResponse(inactivatedRobot);
-        robotProducer.publishRobotInactivated(response);
+        robot.setStatus(data.status().toLowerCase());
+        Robot updatedRobot = robotRepository.save(robot);
+        var response = toResponse(updatedRobot);
+        robotProducer.publishRobotChangeStatus(response);
         return response;
+    }
+
+    public void deleteByRobotId(String id) {
+        Robot robot = robotRepository.findByRobotId(id)
+                .orElseThrow(() -> new RobotNotFoundException("Robot not found with id: " + id));
+        robotProducer.publishRobotDeleted(toResponse(robot));
+        robotRepository.delete(robot);
     }
 }

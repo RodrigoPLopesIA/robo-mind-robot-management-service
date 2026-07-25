@@ -2,6 +2,7 @@ package com.robomind.robot_management_service.robot.service;
 
 import com.robomind.robot_management_service.exceptions.errors.RobotConflictException;
 import com.robomind.robot_management_service.exceptions.errors.RobotNotFoundException;
+import com.robomind.robot_management_service.robot.dto.ChangeStatusDTO;
 import com.robomind.robot_management_service.robot.dto.CreateRobotRequest;
 import com.robomind.robot_management_service.robot.dto.RobotResponse;
 import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
@@ -19,7 +20,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -190,14 +190,28 @@ class RobotServiceTest {
     void inactivateByRobotId() {
         Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
         Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
-        Mockito.doNothing().when(robotProducer).publishRobotInactivated(Mockito.any());
+        Mockito.doNothing().when(robotProducer).publishRobotChangeStatus(Mockito.any());
 
-        var result = robotService.inactivateByRobotId("some-id");
+        var result = robotService.changeStatus("some-id", new ChangeStatusDTO("INACTIVE"));
 
         Assertions.assertNotNull(result);
-        Assertions.assertEquals("INACTIVE", result.status());
+        Assertions.assertEquals("inactive", result.status());
 
         Mockito.verify(robotRepository, Mockito.times(1)).findByRobotId(Mockito.anyString());
         Mockito.verify(robotRepository, Mockito.times(1)).save(Mockito.any());
+    }
+
+    @Test
+    @DisplayName("Should delete robot by ID")
+    void shouldDeleteRobotById() {
+        Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
+        Mockito.doNothing().when(robotRepository).delete(Mockito.any());
+        Mockito.doNothing().when(robotProducer).publishRobotDeleted(Mockito.any());
+
+        robotService.deleteByRobotId("some-id");
+
+        Mockito.verify(robotRepository, Mockito.times(1)).findByRobotId(Mockito.anyString());
+        Mockito.verify(robotRepository, Mockito.times(1)).delete(Mockito.any());
+        Mockito.verify(robotProducer, Mockito.times(1)).publishRobotDeleted(Mockito.any());
     }
 }

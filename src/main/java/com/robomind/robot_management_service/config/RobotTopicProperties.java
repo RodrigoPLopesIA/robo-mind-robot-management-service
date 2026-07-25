@@ -10,6 +10,7 @@ public class RobotTopicProperties {
 
     private String created;
     private String updated;
-    private String inactivated;
+    private String changeStatus;
+    private String deleted;
 
 }

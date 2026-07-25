@@ -1,15 +1,18 @@
 package com.robomind.robot_management_service.robot.controller;
 
 import com.robomind.robot_management_service.exceptions.handler.ControllerGlobalErrorHandler;
+import com.robomind.robot_management_service.robot.dto.ChangeStatusDTO;
 import com.robomind.robot_management_service.robot.dto.CreateRobotRequest;
 import com.robomind.robot_management_service.robot.dto.RobotResponse;
 import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
 import com.robomind.robot_management_service.robot.service.RobotService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,10 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -168,11 +168,27 @@ class RobotControllerTest {
                 .updatedAt(robotResponse.updatedAt())
                 .build();
 
-        when(robotService.inactivateByRobotId("robot-123")).thenReturn(inactiveResponse);
+        when(robotService.changeStatus("robot-123", new ChangeStatusDTO("INACTIVE"))).thenReturn(inactiveResponse);
 
-        mockMvc.perform(delete("/robots/robot-123"))
+        mockMvc.perform(patch("/robots/robot-123/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": "INACTIVE"
+                                }
+                                """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.robotId").value("robot-123"))
                 .andExpect(jsonPath("$.status").value("inactive"));
+    }
+
+    @Test
+    @DisplayName("Should delete robot by ID")
+    void shouldDeleteRobotById() throws Exception {
+
+        Mockito.doNothing().when(robotService).deleteByRobotId("robot-123");
+        mockMvc.perform(delete("/robots/robot-123"))
+                .andExpect(status().isNoContent());
+
     }
 }

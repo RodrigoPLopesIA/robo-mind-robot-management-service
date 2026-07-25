@@ -2,6 +2,7 @@ package com.robomind.robot_management_service.robot.producer;
 
 import com.robomind.robot_management_service.config.RobotTopicProperties;
 import com.robomind.robot_management_service.producer.Producer;
+import com.robomind.robot_management_service.robot.dto.RobotResponse;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +24,11 @@ public class RobotProducer extends Producer {
         publish(topics.getUpdated(), message);
     }
 
-    public void publishRobotInactivated(Object message) {
-        publish(topics.getInactivated(), message);
+    public void publishRobotChangeStatus(Object message) {
+        publish(topics.getChangeStatus(), message);
+    }
+
+    public void publishRobotDeleted(RobotResponse response) {
+
     }
 }
