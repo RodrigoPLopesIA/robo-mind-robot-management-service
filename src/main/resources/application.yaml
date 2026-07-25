@@ -1,3 +1,29 @@
+server:
+  port: 8081
 spring:
   application:
     name: robot-management-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    #    consumer:
+    #      group-id: ${KAFKA_CONSUMER_GROUP_ID}
+    #      auto-offset-reset: earliest
+    #      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    #      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+actuator:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+topics:
+  robot:
+    created: ${ROBOT_CREATED_TOPIC}
+    updated: ${ROBOT_UPDATED_TOPIC}
+    change-status: ${ROBOT_CHANGE_STATUS_TOPIC}
+    deleted: ${ROBOT_DELETED_TOPIC}
