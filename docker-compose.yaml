@@ -1,12 +1,56 @@
 services:
   robot-management-service-database:
-    image: mongo
+    image: mongo:latest
     container_name: robot-management-service-database
     restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
-        - robot-management-service-database-data:/data/db
+      - robot-management-service-database-data:/data/db
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.0
+    container_name: robot-management-service-zookeeper
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.0
+    container_name: robot-management-service-kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: robot-management-service-zookeeper:2181
+
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: robot-management-service-kafka-ui
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: robot-management-service-kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: robot-management-service-zookeeper:2181
 
 volumes:
   robot-management-service-database-data:
