@@ -6,6 +6,7 @@ import com.robomind.robot_management_service.robot.dto.CreateRobotRequest;
 import com.robomind.robot_management_service.robot.dto.RobotResponse;
 import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
 import com.robomind.robot_management_service.robot.model.Robot;
+import com.robomind.robot_management_service.robot.producer.RobotProducer;
 import com.robomind.robot_management_service.robot.repository.RobotRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,8 @@ class RobotServiceTest {
 
     @Mock
     private RobotRepository robotRepository;
+    @Mock
+    private RobotProducer robotProducer;
 
     @InjectMocks
     private RobotService robotService;
@@ -81,7 +84,7 @@ class RobotServiceTest {
 
         Mockito.when(robotRepository.existsBySerialNumber(createRobotRequest.serialNumber())).thenReturn(false);
         Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
-
+        Mockito.doNothing().when(robotProducer).publishRobotCreated(Mockito.any());
         var result = robotService.create(createRobotRequest);
 
         Assertions.assertNotNull(result);
@@ -168,6 +171,7 @@ class RobotServiceTest {
     void updateByRobotId() {
         Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
         Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
+        Mockito.doNothing().when(robotProducer).publishRobotUpdated(Mockito.any());
 
         var result = robotService.updateByRobotId("some-id", updateRobotRequest);
 
@@ -186,6 +190,7 @@ class RobotServiceTest {
     void inactivateByRobotId() {
         Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
         Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
+        Mockito.doNothing().when(robotProducer).publishRobotInactivated(Mockito.any());
 
         var result = robotService.inactivateByRobotId("some-id");
 
