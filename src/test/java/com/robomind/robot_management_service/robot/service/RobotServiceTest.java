@@ -4,6 +4,7 @@ import com.robomind.robot_management_service.exceptions.errors.RobotConflictExce
 import com.robomind.robot_management_service.exceptions.errors.RobotNotFoundException;
 import com.robomind.robot_management_service.robot.dto.CreateRobotRequest;
 import com.robomind.robot_management_service.robot.dto.RobotResponse;
+import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
 import com.robomind.robot_management_service.robot.model.Robot;
 import com.robomind.robot_management_service.robot.repository.RobotRepository;
 import org.junit.jupiter.api.Assertions;
@@ -34,24 +35,31 @@ class RobotServiceTest {
 
     private CreateRobotRequest createRobotRequest;
     private RobotResponse robotResponse;
+    private UpdateRobotRequest updateRobotRequest;
     private Robot robot;
 
     @BeforeEach
     public void setup() {
         createRobotRequest = CreateRobotRequest.builder()
-                .name("Test Robot")
-                .model("Model X")
-                .serialNumber("SN123456")
+                .name("test robot")
+                .model("model x")
+                .serialNumber("sn123456")
                 .build();
 
         robotResponse = RobotResponse.builder()
                 .robotId("123456789")
-                .name("Test Robot")
-                .model("Model X")
-                .serialNumber("SN123456")
-                .status("ACTIVE")
+                .name("test robot")
+                .model("model x")
+                .serialNumber("sn123456")
+                .status("active")
                 .createdAt(java.time.Instant.now())
                 .updatedAt(java.time.Instant.now())
+                .build();
+        updateRobotRequest = UpdateRobotRequest.builder()
+                .name("test robot")
+                .model("model x")
+                .status("active")
+                .serialNumber("sn123456")
                 .build();
 
         robot = Robot.builder()
@@ -154,5 +162,37 @@ class RobotServiceTest {
         Assertions.assertEquals("Robot not found with id: some-id", result.getMessage());
 
         Mockito.verify(robotRepository, Mockito.times(1)).findByRobotId(Mockito.anyString());
+    }
+
+    @Test
+    void updateByRobotId() {
+        Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
+        Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
+
+        var result = robotService.updateByRobotId("some-id", updateRobotRequest);
+
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(robotResponse.robotId(), result.robotId());
+        Assertions.assertEquals("test robot", result.name());
+        Assertions.assertEquals(robotResponse.model(), result.model());
+        Assertions.assertEquals(robotResponse.serialNumber(), result.serialNumber());
+        Assertions.assertEquals(robotResponse.status(), result.status());
+
+        Mockito.verify(robotRepository, Mockito.times(1)).findByRobotId(Mockito.anyString());
+        Mockito.verify(robotRepository, Mockito.times(1)).save(Mockito.any());
+    }
+
+    @Test
+    void inactivateByRobotId() {
+        Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
+        Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
+
+        var result = robotService.inactivateByRobotId("some-id");
+
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals("INACTIVE", result.status());
+
+        Mockito.verify(robotRepository, Mockito.times(1)).findByRobotId(Mockito.anyString());
+        Mockito.verify(robotRepository, Mockito.times(1)).save(Mockito.any());
     }
 }
