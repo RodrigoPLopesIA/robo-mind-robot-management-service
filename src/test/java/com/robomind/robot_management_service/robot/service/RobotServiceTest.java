@@ -2,10 +2,12 @@ package com.robomind.robot_management_service.robot.service;
 
 import com.robomind.robot_management_service.exceptions.errors.RobotConflictException;
 import com.robomind.robot_management_service.exceptions.errors.RobotNotFoundException;
+import com.robomind.robot_management_service.robot.dto.ChangeStatusDTO;
 import com.robomind.robot_management_service.robot.dto.CreateRobotRequest;
 import com.robomind.robot_management_service.robot.dto.RobotResponse;
 import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
 import com.robomind.robot_management_service.robot.model.Robot;
+import com.robomind.robot_management_service.robot.producer.RobotProducer;
 import com.robomind.robot_management_service.robot.repository.RobotRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +20,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +30,8 @@ class RobotServiceTest {
 
     @Mock
     private RobotRepository robotRepository;
+    @Mock
+    private RobotProducer robotProducer;
 
     @InjectMocks
     private RobotService robotService;
@@ -81,7 +84,7 @@ class RobotServiceTest {
 
         Mockito.when(robotRepository.existsBySerialNumber(createRobotRequest.serialNumber())).thenReturn(false);
         Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
-
+        Mockito.doNothing().when(robotProducer).publishRobotCreated(Mockito.any());
         var result = robotService.create(createRobotRequest);
 
         Assertions.assertNotNull(result);
@@ -168,6 +171,7 @@ class RobotServiceTest {
     void updateByRobotId() {
         Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
         Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
+        Mockito.doNothing().when(robotProducer).publishRobotUpdated(Mockito.any());
 
         var result = robotService.updateByRobotId("some-id", updateRobotRequest);
 
@@ -186,13 +190,28 @@ class RobotServiceTest {
     void inactivateByRobotId() {
         Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
         Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
+        Mockito.doNothing().when(robotProducer).publishRobotChangeStatus(Mockito.any());
 
-        var result = robotService.inactivateByRobotId("some-id");
+        var result = robotService.changeStatus("some-id", new ChangeStatusDTO("INACTIVE"));
 
         Assertions.assertNotNull(result);
-        Assertions.assertEquals("INACTIVE", result.status());
+        Assertions.assertEquals("inactive", result.status());
 
         Mockito.verify(robotRepository, Mockito.times(1)).findByRobotId(Mockito.anyString());
         Mockito.verify(robotRepository, Mockito.times(1)).save(Mockito.any());
+    }
+
+    @Test
+    @DisplayName("Should delete robot by ID")
+    void shouldDeleteRobotById() {
+        Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
+        Mockito.doNothing().when(robotRepository).delete(Mockito.any());
+        Mockito.doNothing().when(robotProducer).publishRobotDeleted(Mockito.any());
+
+        robotService.deleteByRobotId("some-id");
+
+        Mockito.verify(robotRepository, Mockito.times(1)).findByRobotId(Mockito.anyString());
+        Mockito.verify(robotRepository, Mockito.times(1)).delete(Mockito.any());
+        Mockito.verify(robotProducer, Mockito.times(1)).publishRobotDeleted(Mockito.any());
     }
 }

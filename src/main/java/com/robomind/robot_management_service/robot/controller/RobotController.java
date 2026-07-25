@@ -3,6 +3,7 @@ package com.robomind.robot_management_service.robot.controller;
 import java.util.List;
 import java.util.UUID;
 
+import com.robomind.robot_management_service.robot.dto.ChangeStatusDTO;
 import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
 import jakarta.validation.Valid;
 
@@ -46,8 +47,14 @@ public class RobotController {
         return ResponseEntity.ok().body(robotService.updateByRobotId(id, request));
     }
 
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<RobotResponse> changeStatus(@PathVariable String id, @Valid @RequestBody ChangeStatusDTO data) {
+        return ResponseEntity.ok().body(robotService.changeStatus(id, data));
+    }
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<RobotResponse> inactivate(@PathVariable String id) {
-        return ResponseEntity.ok().body(robotService.inactivateByRobotId(id));
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        robotService.deleteByRobotId(id);
+        return ResponseEntity.noContent().build();
     }
 }

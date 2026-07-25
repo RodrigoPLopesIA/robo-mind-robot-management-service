@@ -5,8 +5,10 @@ import java.util.UUID;
 
 import com.robomind.robot_management_service.exceptions.errors.RobotConflictException;
 import com.robomind.robot_management_service.exceptions.errors.RobotNotFoundException;
+import com.robomind.robot_management_service.robot.dto.ChangeStatusDTO;
 import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
 import com.robomind.robot_management_service.robot.enums.RobotStatus;
+import com.robomind.robot_management_service.robot.producer.RobotProducer;
 import jakarta.validation.Valid;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
@@ -27,15 +29,19 @@ import com.robomind.robot_management_service.robot.repository.RobotRepository;
 public class RobotService {
 
 	private final RobotRepository robotRepository;
-
-	public RobotService(RobotRepository robotRepository) {
+    private final RobotProducer robotProducer;
+	public RobotService(RobotRepository robotRepository, RobotProducer robotProducer) {
 		this.robotRepository = robotRepository;
+        this.robotProducer = robotProducer;
 	}
 
 	public RobotResponse create(CreateRobotRequest request) {
         verifyIfRobotExistsBySerialNumber(request.serialNumber());
 		Robot robot = buildRobot(request);
-		return toResponse(robotRepository.save(robot));
+		Robot savedRobot = robotRepository.save(robot);
+        var response = toResponse(savedRobot);
+        robotProducer.publishRobotCreated(response);
+		return response;
 	}
 
 
@@ -77,7 +83,10 @@ public class RobotService {
         }
 
         buildUpdateRobot(request, robot);
-        return toResponse(robotRepository.save(robot));
+        Robot updatedRobot = robotRepository.save(robot);
+        var response = toResponse(updatedRobot);
+        robotProducer.publishRobotUpdated(response);
+        return response;
     }
 
     private void buildUpdateRobot(UpdateRobotRequest request, Robot robot){
@@ -102,10 +111,20 @@ public class RobotService {
         }
     }
 
-    public RobotResponse inactivateByRobotId(String id) {
+    public RobotResponse changeStatus(String id, ChangeStatusDTO data) {
         Robot robot = robotRepository.findByRobotId(id)
                 .orElseThrow(() -> new RobotNotFoundException("Robot not found with id: " + id));
-        robot.setStatus(RobotStatus.INACTIVE.toString());
-        return toResponse(robotRepository.save(robot));
+        robot.setStatus(data.status().toLowerCase());
+        Robot updatedRobot = robotRepository.save(robot);
+        var response = toResponse(updatedRobot);
+        robotProducer.publishRobotChangeStatus(response);
+        return response;
+    }
+
+    public void deleteByRobotId(String id) {
+        Robot robot = robotRepository.findByRobotId(id)
+                .orElseThrow(() -> new RobotNotFoundException("Robot not found with id: " + id));
+        robotProducer.publishRobotDeleted(toResponse(robot));
+        robotRepository.delete(robot);
     }
 }
