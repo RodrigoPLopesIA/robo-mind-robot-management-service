@@ -1,6 +1,5 @@
 package com.robomind.robot_management_service.robot.service;
 
-import java.util.List;
 import java.util.UUID;
 
 import com.robomind.robot_management_service.exceptions.errors.RobotConflictException;
@@ -10,16 +9,14 @@ import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
 import com.robomind.robot_management_service.robot.enums.RobotStatus;
 import com.robomind.robot_management_service.robot.metrics.RobotMetrics;
 import com.robomind.robot_management_service.robot.producer.RobotProducer;
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.Nullable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.robomind.robot_management_service.robot.dto.CreateRobotRequest;
 import com.robomind.robot_management_service.robot.dto.RobotResponse;
@@ -42,6 +39,7 @@ public class RobotService {
         this.robotMetrics = robotMetrics;
 	}
 
+    @CachePut(value = "robots", key = "#result.robotId")
 	public RobotResponse create(CreateRobotRequest request) {
         log.info("Creating robot with model: {}", request.model());
         verifyIfRobotExistsBySerialNumber(request.serialNumber());
@@ -59,7 +57,6 @@ public class RobotService {
         return response;
 	}
 
-
 	@Transactional(readOnly = true)
 	public Page<RobotResponse> findAll(Pageable pageable) {
         log.info("Finding all robots with pageable: {}", pageable);
@@ -67,6 +64,7 @@ public class RobotService {
 	}
 
 	@Transactional(readOnly = true)
+    @Cacheable(value = "robots", key = "#id")
 	public RobotResponse findByRobotId(String id) {
         log.info("Finding robot by id: {}", id);
 		return robotRepository.findByRobotId(id)
@@ -99,6 +97,7 @@ public class RobotService {
 				robot.getUpdatedAt());
 	}
 
+    @CachePut(value = "robots", key = "#id")
     public RobotResponse updateByRobotId(String id, UpdateRobotRequest request) {
         log.info("Updating robot with id: {}", id);
         Robot robot = robotRepository.findByRobotId(id)
@@ -157,6 +156,7 @@ public class RobotService {
         }
     }
 
+    @CachePut(value = "robots", key = "#id")
     public RobotResponse changeStatus(String id, ChangeStatusDTO data) {
         log.info("Changing status of robot with id: {}", id);
         Robot robot = robotRepository.findByRobotId(id)
@@ -181,6 +181,7 @@ public class RobotService {
         return response;
     }
 
+    @CacheEvict(value = "robots", key = "#id")
     public void deleteByRobotId(String id) {
         log.info("Deleting robot with id: {}", id);
         Robot robot = robotRepository.findByRobotId(id)
