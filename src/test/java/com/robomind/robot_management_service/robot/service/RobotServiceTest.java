@@ -6,6 +6,7 @@ import com.robomind.robot_management_service.robot.dto.ChangeStatusDTO;
 import com.robomind.robot_management_service.robot.dto.CreateRobotRequest;
 import com.robomind.robot_management_service.robot.dto.RobotResponse;
 import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
+import com.robomind.robot_management_service.robot.metrics.RobotMetrics;
 import com.robomind.robot_management_service.robot.model.Robot;
 import com.robomind.robot_management_service.robot.producer.RobotProducer;
 import com.robomind.robot_management_service.robot.repository.RobotRepository;
@@ -32,7 +33,8 @@ class RobotServiceTest {
     private RobotRepository robotRepository;
     @Mock
     private RobotProducer robotProducer;
-
+    @Mock
+    private RobotMetrics robotMetrics;
     @InjectMocks
     private RobotService robotService;
 
@@ -85,6 +87,7 @@ class RobotServiceTest {
         Mockito.when(robotRepository.existsBySerialNumber(createRobotRequest.serialNumber())).thenReturn(false);
         Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
         Mockito.doNothing().when(robotProducer).publishRobotCreated(Mockito.any());
+        Mockito.doNothing().when(robotMetrics).countRobotCreated();
         var result = robotService.create(createRobotRequest);
 
         Assertions.assertNotNull(result);
@@ -98,7 +101,7 @@ class RobotServiceTest {
 
         Mockito.verify(robotRepository, Mockito.times(1)).existsBySerialNumber(createRobotRequest.serialNumber());
         Mockito.verify(robotRepository, Mockito.times(1)).save(Mockito.any());
-
+        Mockito.verify(robotMetrics, Mockito.times(1)).countRobotCreated();
     }
 
     @Test
@@ -115,7 +118,7 @@ class RobotServiceTest {
 
         Mockito.verify(robotRepository, Mockito.times(1)).existsBySerialNumber(createRobotRequest.serialNumber());
         Mockito.verify(robotRepository, Mockito.times(0)).save(Mockito.any());
-
+        Mockito.verify(robotMetrics, Mockito.times(0)).countRobotCreated();
     }
 
     @Test
@@ -172,6 +175,7 @@ class RobotServiceTest {
         Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
         Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
         Mockito.doNothing().when(robotProducer).publishRobotUpdated(Mockito.any());
+        Mockito.doNothing().when(robotMetrics).countRobotUpdated();
 
         var result = robotService.updateByRobotId("some-id", updateRobotRequest);
 
@@ -191,7 +195,7 @@ class RobotServiceTest {
         Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
         Mockito.when(robotRepository.save(Mockito.any())).thenReturn(robot);
         Mockito.doNothing().when(robotProducer).publishRobotChangeStatus(Mockito.any());
-
+        Mockito.doNothing().when(robotMetrics).changeStatus("INACTIVE");
         var result = robotService.changeStatus("some-id", new ChangeStatusDTO("INACTIVE"));
 
         Assertions.assertNotNull(result);
@@ -199,6 +203,7 @@ class RobotServiceTest {
 
         Mockito.verify(robotRepository, Mockito.times(1)).findByRobotId(Mockito.anyString());
         Mockito.verify(robotRepository, Mockito.times(1)).save(Mockito.any());
+        Mockito.verify(robotMetrics, Mockito.times(1)).changeStatus("INACTIVE");
     }
 
     @Test
@@ -207,11 +212,12 @@ class RobotServiceTest {
         Mockito.when(robotRepository.findByRobotId(Mockito.anyString())).thenReturn(Optional.of(robot));
         Mockito.doNothing().when(robotRepository).delete(Mockito.any());
         Mockito.doNothing().when(robotProducer).publishRobotDeleted(Mockito.any());
-
+        Mockito.doNothing().when(robotMetrics).countRobotDeleted();
         robotService.deleteByRobotId("some-id");
 
         Mockito.verify(robotRepository, Mockito.times(1)).findByRobotId(Mockito.anyString());
         Mockito.verify(robotRepository, Mockito.times(1)).delete(Mockito.any());
         Mockito.verify(robotProducer, Mockito.times(1)).publishRobotDeleted(Mockito.any());
+        Mockito.verify(robotMetrics, Mockito.times(1)).countRobotDeleted();
     }
 }

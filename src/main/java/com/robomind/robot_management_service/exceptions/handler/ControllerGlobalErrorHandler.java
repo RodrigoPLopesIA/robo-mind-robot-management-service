@@ -5,6 +5,7 @@ import com.robomind.robot_management_service.exceptions.dtos.ResponseErrorDTO;
 import com.robomind.robot_management_service.exceptions.errors.RobotConflictException;
 import com.robomind.robot_management_service.exceptions.errors.RobotNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -14,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @ControllerAdvice
 public class ControllerGlobalErrorHandler {
 
@@ -30,6 +32,7 @@ public class ControllerGlobalErrorHandler {
 
     @ExceptionHandler(RobotNotFoundException.class)
     public ResponseEntity<ResponseErrorDTO> handleRobotNotFoundException(RobotNotFoundException ex, HttpServletRequest request) {
+        log.error("handleRobotNotFoundException",  ex);
         ResponseErrorDTO response = ResponseErrorDTO.builder()
                 .path(request.getRequestURI())
                 .message(ex.getMessage())
@@ -41,6 +44,7 @@ public class ControllerGlobalErrorHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ResponseErrorDTO> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        log.error("MethodArgumentNotValidException", ex);
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
         ResponseErrorDTO response = ResponseErrorDTO.builder()
