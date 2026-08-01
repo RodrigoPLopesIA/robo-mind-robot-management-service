@@ -8,6 +8,7 @@ import com.robomind.robot_management_service.exceptions.errors.RobotNotFoundExce
 import com.robomind.robot_management_service.robot.dto.ChangeStatusDTO;
 import com.robomind.robot_management_service.robot.dto.UpdateRobotRequest;
 import com.robomind.robot_management_service.robot.enums.RobotStatus;
+import com.robomind.robot_management_service.robot.metrics.RobotMetrics;
 import com.robomind.robot_management_service.robot.producer.RobotProducer;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -32,9 +33,13 @@ public class RobotService {
 
 	private final RobotRepository robotRepository;
     private final RobotProducer robotProducer;
-	public RobotService(RobotRepository robotRepository, RobotProducer robotProducer) {
+
+    private final RobotMetrics robotMetrics;
+
+	public RobotService(RobotRepository robotRepository, RobotProducer robotProducer, RobotMetrics robotMetrics) {
 		this.robotRepository = robotRepository;
         this.robotProducer = robotProducer;
+        this.robotMetrics = robotMetrics;
 	}
 
 	public RobotResponse create(CreateRobotRequest request) {
@@ -44,7 +49,7 @@ public class RobotService {
 
         log.info("Saving robot with id: {} and model: {}", robot.getRobotId(), robot.getModel());
 		Robot savedRobot = robotRepository.save(robot);
-
+        robotMetrics.countRobotCreated();
 
         var response = toResponse(savedRobot);
         log.info("Starting to publish robot created event for robot with id: {} and model: {}", response.robotId(), response.model());
@@ -110,6 +115,10 @@ public class RobotService {
 
         log.info("Updating robot with id: {}", id);
         Robot updatedRobot = robotRepository.save(robot);
+        log.info("Create updatedRobot metric for robot with id: {}", id);
+        robotMetrics.countRobotUpdated();
+        log.info("Robot updated metric for robot status with id: {}", id);
+        robotMetrics.changeStatus(updatedRobot.getStatus());
         log.info("Robot updated with id: {}", id);
         var response = toResponse(updatedRobot);
         log.info("Finished updating robot with id: {}", id);
@@ -161,6 +170,9 @@ public class RobotService {
         log.info("Updating robot status to: {}", data.status());
         Robot updatedRobot = robotRepository.save(robot);
 
+        log.info("Create changeStatus metric for robot with id: {}", id);
+        robotMetrics.changeStatus(data.status());
+
         var response = toResponse(updatedRobot);
 
         log.info("Finished changing status of robot with id: {}", id);
@@ -181,6 +193,8 @@ public class RobotService {
         robotProducer.publishRobotDeleted(toResponse(robot));
         log.info("Finished publishing robot deleted event for robot with id: {}", id);
         robotRepository.delete(robot);
+        log.info("Create robotDeleted metric for robot with id: {}", id);
+        robotMetrics.countRobotDeleted();
         log.info("Finished deleting robot with id: {}", id);
     }
 }
