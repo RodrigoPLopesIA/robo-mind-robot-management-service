@@ -1,9 +1,7 @@
 package com.robomind.robot_management_service.robot.metrics;
 
 import com.robomind.robot_management_service.robot.enums.RobotStatus;
-import com.robomind.robot_management_service.robot.service.RobotService;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +9,7 @@ import org.springframework.stereotype.Component;
 public class RobotMetrics {
 
 
-    private final Counter  robotCreated;
+    private final Counter robotCreated;
     private final Counter robotUpdated;
     private final Counter robotDeleted;
     private final Counter robotInactive;
