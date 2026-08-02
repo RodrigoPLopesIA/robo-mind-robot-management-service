@@ -38,3 +38,6 @@ out/
 *Zone.Identifier
 /**/*Zone.Identifier
 /src/main/resources/application-local.yaml
+
+## env
+.env
