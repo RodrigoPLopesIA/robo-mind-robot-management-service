@@ -6,12 +6,17 @@ plugins {
 }
 
 group = 'com.robomind'
-version = '0.0.1-SNAPSHOT'
+version = '1.0'
 
 jacoco {
     toolVersion = "0.8.13"
 }
 
+tasks.register("printVersion") {
+    doLast {
+        println project.version
+    }
+}
 test {
     finalizedBy jacocoTestReport
 }
