@@ -83,11 +83,15 @@ jobs:
 
       - name: Read base version
         run: |
-          echo "BASE_VERSION=$(./gradlew -q printVersion)" >> $GITHUB_ENV
+          BASE_VERSION=$(./gradlew -q printVersion | tail -n 1 | tr -d '\r')
+          echo "BASE_VERSION=$BASE_VERSION" >> "$GITHUB_ENV"
+          echo "Base version: $BASE_VERSION"
 
       - name: Generate application version
         run: |
-          echo "APP_VERSION=${BASE_VERSION}.${{ github.run_number }}" >> $GITHUB_ENV
+          APP_VERSION="${BASE_VERSION}.${{ github.run_number }}"
+          echo "APP_VERSION=$APP_VERSION" >> "$GITHUB_ENV"
+          echo "App version: $APP_VERSION"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
