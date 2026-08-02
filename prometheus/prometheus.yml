@@ -7,4 +7,4 @@ scrape_configs:
     metrics_path: /actuator/prometheus
     static_configs:
       - targets:
-          - 172.30.141.133:8081
+          - robot-management-service:8081

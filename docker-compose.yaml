@@ -6,14 +6,24 @@ services:
     build: .
     container_name: robot-management-service
     restart: unless-stopped
-    env_file:
-      - .env
+    depends_on:
+      robot-management-service-database:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      redis:
+        condition: service_healthy
     ports:
       - "8081:8081"
-    depends_on:
-      - robot-management-service-database
-      - kafka
-      - redis
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://robot-management-service-database:27017/robot_management
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: robot-management-service-kafka:29092
+      SPRING_ROBOT_CREATED_TOPIC: robot.created
+      SPRING_ROBOT_UPDATED_TOPIC: robot.updated
+      SPRING_ROBOT_CHANGE_STATUS_TOPIC: robot.change-status
+      SPRING_ROBOT_DELETED_TOPIC: robot.deleted
     networks:
       - robomind-network
 
@@ -30,8 +40,10 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+      start_period: 15s
     networks:
       - robomind-network
+
   redis:
     image: redis:7-alpine
     container_name: robot-management-service-redis
@@ -43,20 +55,24 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+      start_period: 10s
     networks:
       - robomind-network
+
   redis-ui:
     image: rediscommander/redis-commander:latest
     container_name: robot-management-service-redis-ui
     restart: unless-stopped
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       REDIS_HOSTS: local:redis:6379
     ports:
       - "8082:8081"
     networks:
       - robomind-network
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.7.0
     container_name: robot-management-service-zookeeper
@@ -68,6 +84,7 @@ services:
       - "2181:2181"
     networks:
       - robomind-network
+
   kafka:
     image: confluentinc/cp-kafka:7.7.0
     container_name: robot-management-service-kafka
@@ -89,6 +106,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     networks:
       - robomind-network
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: robot-management-service-kafka-ui
@@ -102,6 +120,7 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: robot-management-service-kafka:29092
     networks:
       - robomind-network
+
   prometheus:
     image: prom/prometheus:latest
     container_name: robot-management-service-prometheus
@@ -112,7 +131,9 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - robomind-network
+
 volumes:
   robot-management-service-database-data:
+
 networks:
   robomind-network:

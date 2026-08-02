@@ -7,18 +7,17 @@ spring:
 
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/robot-management-service}
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://robot-management-service-database:27017/robot_management}
 
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${SPRING_REDIS_HOST:redis}
+      port: ${SPRING_REDIS_PORT:6379}
 
   cache:
     type: redis
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:robot-management-service-kafka:29092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -44,7 +43,7 @@ management:
 
 topics:
   robot:
-    created: ${ROBOT_CREATED_TOPIC:robot.created}
-    updated: ${ROBOT_UPDATED_TOPIC:robot.updated}
-    change-status: ${ROBOT_CHANGE_STATUS_TOPIC:robot.status.changed}
-    deleted: ${ROBOT_DELETED_TOPIC:robot.deleted}
+    created: ${SPRING_ROBOT_CREATED_TOPIC:robot.created}
+    updated: ${SPRING_ROBOT_UPDATED_TOPIC:robot.updated}
+    change-status: ${SPRING_ROBOT_CHANGE_STATUS_TOPIC:robot.change-status}
+    deleted: ${SPRING_ROBOT_DELETED_TOPIC:robot.deleted}

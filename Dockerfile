@@ -1,40 +1,31 @@
-FROM amazoncorretto:21-alpine AS builder
+# Etapa de build
+FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
 
-# Copia apenas os arquivos necessários para aproveitar o cache
+# Copia os arquivos do Gradle
 COPY gradlew .
 COPY gradle gradle
-COPY build.gradle* settings.gradle* ./
+COPY build.gradle .
+COPY settings.gradle .
 
+# Baixa as dependências (melhora o cache)
 RUN chmod +x gradlew
-
-# Baixa as dependências
 RUN ./gradlew dependencies --no-daemon
 
-# Copia o restante do projeto
+# Copia o código-fonte
 COPY src src
 
 # Gera o JAR
-RUN ./gradlew clean bootJar -x test --no-daemon
+RUN ./gradlew bootJar --no-daemon
 
-# ==========================
-# Runtime
-# ==========================
-
-FROM amazoncorretto:21-alpine
+# Etapa de execução
+FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-# Cria um usuário sem privilégios
-RUN addgroup -S spring && adduser -S spring -G spring
-
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-RUN chown spring:spring app.jar
+EXPOSE 8081
 
-USER spring
-
-EXPOSE 8080
-
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
